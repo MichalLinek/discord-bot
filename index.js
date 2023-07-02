@@ -4,6 +4,7 @@ const { joinVoiceChannel,
 	createAudioResource} = require("@discordjs/voice");
 require('dotenv/config');
 const { REST } = require('@discordjs/rest')
+const FileNameMap = require('./command-to-file-map');
 
 const client = new Client({ 
     intents: [
@@ -61,7 +62,7 @@ client.on('interactionCreate', async (interaction) => {
     if (commandName === 'invite') {
         await interaction.reply({ content: 'No czesc' });
         connection = joinVoiceChannel({
-            channelId: interaction.member.voice.channel.id,
+            channelId: interaction.member.voice.channel?.id || process.env.VOICE_CHANNEL_ID,
             guildId: interaction.member.guild.id,
             adapterCreator: interaction.guild.voiceAdapterCreator,
           })
@@ -74,8 +75,8 @@ client.on('interactionCreate', async (interaction) => {
 })
 
 client.on('messageCreate', message => {
-    if (message.content.startsWith('play')) {
-        const channel = message.member?.voice.channel.id;
+    if (message.content.startsWith('!')) {
+        const channelId = message.member?.voice.channel?.id || process.env.VOICE_CHANNEL_ID;
         //message.reply('a' + message.member?.voice.channel.members);
         
         //DISPLAY USER NAME:
@@ -83,16 +84,21 @@ client.on('messageCreate', message => {
         //     message.reply(a.user.username);
         // });
 
-		if (channel) {
+		if (channelId) {
 			connection = joinVoiceChannel({
-                channelId: message.member.voice.channel,
+                channelId: channelId,
                 guildId: message.guild.id,
                 adapterCreator: message.guild.voiceAdapterCreator,
               })
               const player = createAudioPlayer();
               connection.subscribe(player);
               
-              const resource = createAudioResource('./sounds/age/' + message.content.split(' ')[1] + '.mp3')
+              const phrases = message.content.substring(1).split();
+              if (!phrases?.length) return;
+              const soundKey = phrases[0].toLowerCase();
+
+              if (!FileNameMap[soundKey]) return;
+              const resource = createAudioResource('./sounds' + FileNameMap[soundKey]);
               player.play(resource)
 		} else {
 			message.reply('Join a voice channel then try again!');
