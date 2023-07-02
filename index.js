@@ -15,16 +15,23 @@ const client = new Client({
 })
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
+let connection;
+let player;
+
 client.on('ready', async () => {
     try {
     await rest.put(Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID), {
         body: [{
-            name: 'test',
-            description: 'Replies to pong 142142.',  
+            name: 'play',
+            description: 'Plays one of the sound files',  
         },
-    {
-        name: 'leave',
-        description: 'Bot leaves the voice channel'
+        {
+            name: 'invite',
+            description: 'Invite SoundBot to the Voice Channel'
+        },
+        {
+        name: 'disconnect',
+        description: 'Disconnect SoundBot to the Voice Channel'
     }]
     })
 }
@@ -33,9 +40,7 @@ catch(err) {
 }
 })
 
-
 client.on('interactionCreate', async (interaction) => {
-    console.log('inter');
     if (!interaction.isChatInputCommand()) {
         console.log('interaction!')
         return;
@@ -44,18 +49,32 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName, options } = interaction
 
     console.log(commandName);
-    if (commandName === 'test') {
-        await interaction.reply({ content: 'Secret Pong!', ephemeral: true });
+    if (commandName === 'play') {
+        await interaction.reply({ content: 'Playing', ephemeral: true });
     }
+    if (commandName === 'disconnect') {
+        await interaction.reply({ content: 'Bye!' });
+        connection.disconnect();
+        player = null;
+        connection = null;
+    }
+    if (commandName === 'invite') {
+        await interaction.reply({ content: 'No czesc' });
+        connection = joinVoiceChannel({
+            channelId: interaction.member.voice.channel.id,
+            guildId: interaction.member.guild.id,
+            adapterCreator: interaction.guild.voiceAdapterCreator,
+          })
+          player = createAudioPlayer();
+          connection.subscribe(player);
 
-    if (commandName === 'leave') {
-        //connection.disconnect();
-        //console.log(interaction.member.voice.channel);
+          const resource = createAudioResource('./sounds/chlopaki_nie_placza/no_czesc.wav');
+            player.play(resource)
     }
 })
 
 client.on('messageCreate', message => {
-    if (message.content === 'ping') {
+    if (message.content.startsWith('play')) {
         const channel = message.member?.voice.channel.id;
         //message.reply('a' + message.member?.voice.channel.members);
         
@@ -65,7 +84,7 @@ client.on('messageCreate', message => {
         // });
 
 		if (channel) {
-			const connection = joinVoiceChannel({
+			connection = joinVoiceChannel({
                 channelId: message.member.voice.channel,
                 guildId: message.guild.id,
                 adapterCreator: message.guild.voiceAdapterCreator,
@@ -73,7 +92,7 @@ client.on('messageCreate', message => {
               const player = createAudioPlayer();
               connection.subscribe(player);
               
-              const resource = createAudioResource('./sounds/age/king.mp3')
+              const resource = createAudioResource('./sounds/age/' + message.content.split(' ')[1] + '.mp3')
               player.play(resource)
 		} else {
 			message.reply('Join a voice channel then try again!');
@@ -84,22 +103,22 @@ client.on('messageCreate', message => {
 client.login(process.env.TOKEN);
 client.on('voiceStateUpdate', (oldState, newState) => {
     
-    if (oldState.channelId === null) {
-        connection = joinVoiceChannel({
-            channelId: newState.channelId,
-            guildId: newState.guild.id,
-            adapterCreator: newState.guild.voiceAdapterCreator,
-          })
-          const player = createAudioPlayer();
-          connection.subscribe(player)
+    // if (oldState.channelId === null) {
+    //     connection = joinVoiceChannel({
+    //         channelId: newState.channelId,
+    //         guildId: newState.guild.id,
+    //         adapterCreator: newState.guild.voiceAdapterCreator,
+    //       })
+    //       const player = createAudioPlayer();
+    //       connection.subscribe(player)
           
-          const resource = createAudioResource('./sounds/others/goodmorn.wav')
-          player.play(resource)
+    //       //const resource = createAudioResource('./sounds/others/goodmorn.wav')
+    //       //player.play(resource)
           
           
-    } else if (newState.channelId === null) {
-        console.log("Left")
-    }
+    // } else if (newState.channelId === null) {
+    //     console.log("Left")
+    // }
 });
 
 
