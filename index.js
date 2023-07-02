@@ -5,7 +5,7 @@ const { joinVoiceChannel,
 require('dotenv/config');
 const { REST } = require('@discordjs/rest')
 
-const client = new Client({
+const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
