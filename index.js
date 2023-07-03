@@ -1,4 +1,4 @@
-const  {Client, GatewayIntentBits, Routes } = require('discord.js');
+const  {Client, GatewayIntentBits, Routes, ApplicationCommandOptionType } = require('discord.js');
 const { joinVoiceChannel,
 	createAudioPlayer,
 	createAudioResource} = require("@discordjs/voice");
@@ -19,21 +19,51 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 let connection;
 let player;
 
+const commands = [
+    {
+        name: 'play',
+        description: 'Play sounds from one of the movies',
+        options: [{
+            name: 'pulpfiction',
+            description: 'Pulp Fiction',
+            type: ApplicationCommandOptionType.String,
+            choices: Object.keys(FileNameMap.pulpfiction).map(trackName => ({
+                name: trackName,
+                value: FileNameMap.pulpfiction[trackName]
+            }))
+        },
+    {
+        name: 'age',
+            description: 'Age Of Empires 2',
+            type: ApplicationCommandOptionType.String,
+            choices: Object.keys(FileNameMap.age).map(trackName => ({
+                name: trackName,
+                value: FileNameMap.age[trackName]
+            }))
+    },
+{
+    name: 'chlopaki',
+            description: 'Chlopaki nie placza',
+            type: ApplicationCommandOptionType.String,
+            choices: Object.keys(FileNameMap.chlopaki).map(trackName => ({
+                name: trackName,
+                value: FileNameMap.chlopaki[trackName]
+            }))
+}]
+    },{
+        name: 'invite',
+        description: 'Invite SoundBot to the Voice Channel'
+    },
+    {
+    name: 'disconnect',
+    description: 'Disconnect SoundBot to the Voice Channel'
+}]
+
+
 client.on('ready', async () => {
     try {
     await rest.put(Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID), {
-        body: [{
-            name: 'play',
-            description: 'Plays one of the sound files',  
-        },
-        {
-            name: 'invite',
-            description: 'Invite SoundBot to the Voice Channel'
-        },
-        {
-        name: 'disconnect',
-        description: 'Disconnect SoundBot to the Voice Channel'
-    }]
+        body: commands
     })
 }
 catch(err) {
@@ -42,19 +72,25 @@ catch(err) {
 })
 
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand()) {
-        console.log('interaction!')
-        return;
-    }
+    if (!interaction.isChatInputCommand()) return;
 
     const { commandName, options } = interaction
 
     console.log(commandName);
     if (commandName === 'play') {
-        await interaction.reply({ content: 'Playing', ephemeral: true });
+        if (!player) {
+            await interaction.reply({ content: 'I can only play in the VoiceChannel', ephemeral: true });
+            return;
+        }
+        const track = interaction.options.data[0]?.value;
+        if (track) {
+            await interaction.reply({ content: 'Playing', ephemeral: true });
+            const resource = createAudioResource('./sounds/' + track);
+            player.play(resource);
+        }
     }
     if (commandName === 'disconnect') {
-        await interaction.reply({ content: 'Bye!' });
+        await interaction.reply({ content: 'Bye', ephemeral: true });
         connection.disconnect();
         player = null;
         connection = null;
