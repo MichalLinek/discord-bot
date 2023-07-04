@@ -49,6 +49,24 @@ const commands = [
                 name: trackName,
                 value: FileNameMap.chlopaki[trackName]
             }))
+},
+{
+    name: 'warcraft',
+            description: 'Warcraft 3',
+            type: ApplicationCommandOptionType.String,
+            choices: Object.keys(FileNameMap.warcraft).map(trackName => ({
+                name: trackName,
+                value: FileNameMap.warcraft[trackName]
+            }))
+},
+{
+    name: 'holygrail',
+            description: 'Monty Python - Holy Grail',
+            type: ApplicationCommandOptionType.String,
+            choices: Object.keys(FileNameMap.holygrail).map(trackName => ({
+                name: trackName,
+                value: FileNameMap.holygrail[trackName]
+            }))
 }]
     },{
         name: 'invite',
@@ -105,7 +123,7 @@ client.on('interactionCreate', async (interaction) => {
           player = createAudioPlayer();
           connection.subscribe(player);
 
-          const resource = createAudioResource('./sounds/chlopaki_nie_placza/no_czesc.wav');
+          const resource = createAudioResource('./sounds/chlopaki/no_czesc.wav');
             player.play(resource)
     }
 })
