@@ -25,7 +25,9 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 let connection;
 let player;
+let shortcuts = {
 
+};
 const commands = [
   {
     name: "play",
@@ -36,7 +38,7 @@ const commands = [
       type: ApplicationCommandOptionType.String,
       choices: Object.keys(x.choices).map((trackName) => ({
         name: trackName,
-        value: x.choices[trackName],
+        value: x.choices[trackName].path
       })),
     })),
   },
@@ -50,6 +52,7 @@ const commands = [
   },
 ];
 
+
 client.on("ready", async () => {
   try {
     await rest.put(
@@ -61,6 +64,11 @@ client.on("ready", async () => {
         body: commands,
       }
     );
+    
+    FileNameMap.flatMap(x => Object.values(x.choices)).map(x => {
+      shortcuts[x.shortcut] = x.path;
+    })
+      
   } catch (err) {
     console.error(err);
   }
@@ -94,7 +102,6 @@ client.on("interactionCreate", async (interaction) => {
     connection = null;
   }
   if (commandName === "invite") {
-    await interaction.reply({ content: "No czesc" });
     connection = joinVoiceChannel({
       channelId:
         interaction.member.voice.channel?.id || process.env.VOICE_CHANNEL_ID,
@@ -103,44 +110,38 @@ client.on("interactionCreate", async (interaction) => {
     });
     player = createAudioPlayer();
     connection.subscribe(player);
-
-    const resource = createAudioResource("./sounds/chlopaki/no_czesc.wav");
-    player.play(resource);
   }
 });
 
-client.on("messageCreate", (message) => {
+client.on("messageCreate", async (message) => {
   if (message.content.startsWith("!")) {
-    const channelId =
-      message.member?.voice.channel?.id || process.env.VOICE_CHANNEL_ID;
     //message.reply('a' + message.member?.voice.channel.members);
 
     //DISPLAY USER NAME:
     // message.member?.voice.channel.members.forEach((a) => {
     //     message.reply(a.user.username);
     // });
+      if (!player) {
+        return;
+      }
+      // connection = joinVoiceChannel({
+      //   channelId: channelId,
+      //   guildId: message.guild.id,
+      //   adapterCreator: message.guild.voiceAdapterCreator,
+      // });
+      //const player = createAudioPlayer();
+     // connection.subscribe(player);
 
-    if (channelId) {
-      connection = joinVoiceChannel({
-        channelId: channelId,
-        guildId: message.guild.id,
-        adapterCreator: message.guild.voiceAdapterCreator,
-      });
-      const player = createAudioPlayer();
-      connection.subscribe(player);
+     // const phrases = message.content.substring(1).split();
+     // if (!phrases?.length) return;
 
-      const phrases = message.content.substring(1).split();
-      if (!phrases?.length) return;
-      const soundKey = phrases[0].toLowerCase();
-
-      if (!FileNameMap[soundKey]) return;
-      const resource = createAudioResource("./sounds" + FileNameMap[soundKey]);
+      if (!shortcuts[message]) return;
+      //await interaction.reply({ content: "Playing", ephemeral: true });
+      const resource = createAudioResource("./sounds" + shortcuts[message]);
       player.play(resource);
-    } else {
-      message.reply("Join a voice channel then try again!");
-    }
+    } 
   }
-});
+);
 
 client.login(process.env.TOKEN);
 client.on("voiceStateUpdate", (oldState, newState) => {
