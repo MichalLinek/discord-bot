@@ -12,6 +12,8 @@ const {
 require("dotenv/config");
 const { REST } = require("@discordjs/rest");
 const FileNameMap = require("./command-to-file-map");
+const createButtons = require("./create-buttons");
+const createOptions = require("./create-options");
 
 const client = new Client({
   intents: [
@@ -25,22 +27,30 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 let connection;
 let player;
-let shortcuts = {
+let shortcuts = {};
 
-};
 const commands = [
   {
-    name: "play",
-    description: "Play sounds from one of the movies",
-    options: FileNameMap.map((x) => ({
-      name: x.name,
-      description: x.description,
-      type: ApplicationCommandOptionType.String,
-      choices: Object.keys(x.choices).map((trackName) => ({
-        name: trackName,
-        value: x.choices[trackName].path
-      })),
-    })),
+    name: "help",
+    description: 'Displays available sounds',
+    options: [{
+      name: 'source',
+      description: 'Source of sounds',
+      type: 3,
+      required: true,
+      choices: createOptions()
+    }],
+  },
+  {
+    name: 'play',
+    description: "Play sounds from one of the movies/games",
+    options: [{
+      name: 'shortcut',
+      description: 'Name of the file',
+      required: true,
+      type: ApplicationCommandOptionType.String
+
+    }]
   },
   {
     name: "invite",
@@ -75,25 +85,23 @@ client.on("ready", async () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
+  if (interaction.isButton()) {
+    if (!player) joinChannel(interaction)
+    resource =  createAudioResource("./sounds" + interaction.customId);
+    player.play(resource);
+    await interaction.reply({ content: `Playing ${interaction.customId}`, ephemeral: true });
+  }
   if (!interaction.isChatInputCommand()) return;
 
   const { commandName, options } = interaction;
 
-  console.log(commandName);
-  if (commandName === "play") {
-    if (!player) {
-      await interaction.reply({
-        content: "I can only play in the VoiceChannel",
-        ephemeral: true,
-      });
-      return;
-    }
-    const track = interaction.options.data[0]?.value;
-    if (track) {
-      await interaction.reply({ content: "Playing", ephemeral: true });
-      const resource = createAudioResource("./sounds/" + track);
-      player.play(resource);
-    }
+  if (commandName === "help") {
+    const sourceId = options.data[0]?.value;
+    await interaction.reply({
+      ephemeral: true,
+      content: `Sounds from **${FileNameMap[+sourceId].name}**:`,
+      components: createButtons(sourceId)
+  })
   }
   if (commandName === "disconnect") {
     await interaction.reply({ content: "Bye", ephemeral: true });
@@ -102,28 +110,33 @@ client.on("interactionCreate", async (interaction) => {
     connection = null;
   }
   if (commandName === "invite") {
-    connection = joinVoiceChannel({
-      channelId:
-        interaction.member.voice.channel?.id || process.env.VOICE_CHANNEL_ID,
-      guildId: interaction.member.guild.id,
-      adapterCreator: interaction.guild.voiceAdapterCreator,
-    });
-    player = createAudioPlayer();
-    connection.subscribe(player);
+    joinChannel(interaction)
+  }
+  if (commandName === "play") {
+    if (!player) joinChannel(interaction)
+    const option = options.get('shortcut');
+    if (shortcuts[option?.value]) {
+      await interaction.reply({ content: `Running \`/play ${option?.value}\` -> Playing /sounds${shortcuts[option.value]}`, ephemeral: true });
+      const resource = createAudioResource("./sounds" + shortcuts[option.value]);
+      player.play(resource);
+    }
+    else {
+      await interaction.reply({ content: `Key Sound \`${option.value}\` not found - use \`/help\` command to view available sound files`, ephemeral: true });
+    }
   }
 });
 
-client.on("messageCreate", async (message) => {
-  if (message.content.startsWith("!")) {
+///client.on("messageCreate", async (message) => {
+  //if (message.content.startsWith("!")) {
     //message.reply('a' + message.member?.voice.channel.members);
 
     //DISPLAY USER NAME:
     // message.member?.voice.channel.members.forEach((a) => {
     //     message.reply(a.user.username);
     // });
-      if (!player) {
-        return;
-      }
+      //if (!player) {
+      //  return;
+      //}
       // connection = joinVoiceChannel({
       //   channelId: channelId,
       //   guildId: message.guild.id,
@@ -135,27 +148,24 @@ client.on("messageCreate", async (message) => {
      // const phrases = message.content.substring(1).split();
      // if (!phrases?.length) return;
 
-      if (!shortcuts[message]) return;
+     // if (!shortcuts[message]) return;
       //await interaction.reply({ content: "Playing", ephemeral: true });
-      const resource = createAudioResource("./sounds" + shortcuts[message]);
-      player.play(resource);
-    } 
-  }
-);
+      //const resource = createAudioResource("./sounds" + shortcuts[message]);
+      //layer.play(resource);
+    //}
+  //}
+//);
 
 client.login(process.env.TOKEN);
-client.on("voiceStateUpdate", (oldState, newState) => {
-  // if (oldState.channelId === null) {
-  //     connection = joinVoiceChannel({
-  //         channelId: newState.channelId,
-  //         guildId: newState.guild.id,
-  //         adapterCreator: newState.guild.voiceAdapterCreator,
-  //       })
-  //       const player = createAudioPlayer();
-  //       connection.subscribe(player)
-  //       //const resource = createAudioResource('./sounds/others/goodmorn.wav')
-  //       //player.play(resource)
-  // } else if (newState.channelId === null) {
-  //     console.log("Left")
-  // }
-});
+
+
+joinChannel = (interaction) => {
+  connection = joinVoiceChannel({
+    channelId:
+      interaction.member.voice.channel?.id || process.env.VOICE_CHANNEL_ID,
+    guildId: interaction.member.guild.id,
+    adapterCreator: interaction.guild.voiceAdapterCreator,
+  });
+  player = createAudioPlayer();
+  connection.subscribe(player);
+}
