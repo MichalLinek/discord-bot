@@ -2,6 +2,7 @@ searchButtons = (fileDatabase, phrase) => {
   const list = [];
   let currentLine = [];
   let numberOfOutputs = 0;
+  phrase = phrase.toLowerCase();
   const length = Object.keys(fileDatabase).length;
   for (let i = 0; i < length; i ++ ) {
     const folder = Object.keys(fileDatabase)[i];
@@ -11,7 +12,7 @@ searchButtons = (fileDatabase, phrase) => {
     for (let j = 0; j < fileLength; j ++) {
       let file = files[Object.keys(files)[j]];
 
-      if (file.name.includes(phrase)) {
+      if (file.name.toLowerCase().includes(phrase)) {
         if (numberOfOutputs === 25) {
           console.error('Too many files found - Discord restriction up to 25 items per interaction');
           break;

@@ -75,12 +75,16 @@ let shortcuts = {};
 main();
 
 const commands = [
+{
+  name: "help",
+  description: "Learn how to use DiscordBot to play sounds",
+},
   {
     name: "list",
     description: 'Displays available sounds',
     options: [{
-      name: 'source',
-      description: 'Source of sounds',
+      name: 'folder',
+      description: 'Folder containing the files to play',
       type: 3,
       required: true,
       choices: createOptions(fileDatabase)
@@ -88,13 +92,12 @@ const commands = [
   },
   {
     name: 'play',
-    description: "Play sounds from one of the movies/games",
+    description: "Play sound from the File Database",
     options: [{
       name: 'shortcut',
-      description: 'Name of the file',
+      description: 'Shortcut assigned to a file',
       required: true,
       type: ApplicationCommandOptionType.String
-
     }]
   },
   {
@@ -159,16 +162,27 @@ client.on("interactionCreate", async (interaction) => {
       ephemeral: true,
       content: `Sounds from **${keyWithoutShortcut}**:`,
       components: createButtons(fileDatabase, key)
-  })
+  });
   }
   if (commandName === "disconnect") {
-    await interaction.reply({ content: "Bye", ephemeral: true });
-    connection?.disconnect();
-    player = null;
-    connection = null;
+    if (process.env.ADMIN_ID === interaction.user.id) {
+      await interaction.reply({ content: "Bye", ephemeral: true });
+      connection?.disconnect();
+      player = null;
+      connection = null;
+    }
+    else {
+      await interaction.reply({ content: "Only Admin can disconnect me :(", ephemeral: true });
+    }
   }
   if (commandName === "invite") {
-    joinChannel(interaction)
+    if (process.env.ADMIN_ID === interaction.user.id) {
+      joinChannel(interaction);
+      await interaction.reply({ content: "Welcome", ephemeral: true });
+    }
+    else {
+      await interaction.reply({ content: "Only Admin can invite me :(", ephemeral: true });
+    }
   }
   if (commandName === "play") {
     if (!player) joinChannel(interaction)
@@ -186,46 +200,42 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
   if (commandName === "search") {
+    console.log(interaction.user.id);
     const phrase = options.data[0]?.value;
     
-
+    const foundItems = searchButtons(fileDatabase, phrase);
+    console.log(foundItems);
+    if (foundItems[0].components?.length) {
     await interaction.reply({
       ephemeral: true,
       content: `Search results of phrase **${phrase}**:`,
-      components: searchButtons(fileDatabase, phrase)
-  })
+      components: foundItems 
+    });
+  }
+    else {
+      await interaction.reply({
+        ephemeral: true,
+        content: `No items found for **${phrase}**, try to use different phrase`,
+      });
+    }
+  
+  }
+  if (commandName === "help") {
+    await interaction.reply({
+      ephemeral: true,
+      content: `
+# How to use:
+There are 3 commands to use:\n
+- \`/list <folder>\` to view the files to play inside the given <folder>
+> Example: \`/list folder:Age Of Empires\`\n
+- \`/search <phrase>\` to search files by the given <phrase> 
+> Example: \`/search phrase:Kim\`\n
+- \`/play <file shortcut>\` to play the sound by <shortcut> assigned to a file
+> Example: \`/play shortcut:o1\`
+`
+    })
   }
 });
-
-///client.on("messageCreate", async (message) => {
-  //if (message.content.startsWith("!")) {
-    //message.reply('a' + message.member?.voice.channel.members);
-
-    //DISPLAY USER NAME:
-    // message.member?.voice.channel.members.forEach((a) => {
-    //     message.reply(a.user.username);
-    // });
-      //if (!player) {
-      //  return;
-      //}
-      // connection = joinVoiceChannel({
-      //   channelId: channelId,
-      //   guildId: message.guild.id,
-      //   adapterCreator: message.guild.voiceAdapterCreator,
-      // });
-      //const player = createAudioPlayer();
-     // connection.subscribe(player);
-
-     // const phrases = message.content.substring(1).split();
-     // if (!phrases?.length) return;
-
-     // if (!shortcuts[message]) return;
-      //await interaction.reply({ content: "Playing", ephemeral: true });
-      //const resource = createAudioResource("./sounds" + shortcuts[message]);
-      //layer.play(resource);
-    //}
-  //}
-//);
 
 client.login(process.env.TOKEN);
 
