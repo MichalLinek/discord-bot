@@ -1,9 +1,8 @@
-const FileNameMap = require("./command-to-file-map");
-
-createOptions = () => {
-  return FileNameMap.map((file, index) => ({
-      name: file.name,
-      value: `${index}`
+createOptions = (fileDatabase) => {
+  
+  return Object.keys(fileDatabase).map(file => ({
+      name: fileDatabase[file].name,
+      value: file
     }))
   }
 

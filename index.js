@@ -11,9 +11,51 @@ const {
 } = require("@discordjs/voice");
 require("dotenv/config");
 const { REST } = require("@discordjs/rest");
-const FileNameMap = require("./command-to-file-map");
 const createButtons = require("./create-buttons");
+const searchButtons = require("./search-buttons");
 const createOptions = require("./create-options");
+const fs = require("fs");
+const path = require("path");
+
+const cwd = process.cwd();
+
+const getFilesInFolder = (folderPath, currFolder) => {
+  const files = fs.readdirSync(folderPath);
+  
+  for (const fileName of files) {
+    const filePath = path.join(folderPath, fileName);
+    if (fs.statSync(filePath).isDirectory()) {
+      getFilesInFolder(filePath, fileName);
+    } else {
+      const prefixStart = currFolder.indexOf("(");
+        const prefixEnd = currFolder.indexOf(")");
+        if (!fileDatabase[currFolder]) {
+          fileDatabase[currFolder] = {
+            name: prefixStart > -1 ? currFolder.substring(0, prefixStart) : currFolder,
+            description: 'Test',
+            choices: {}
+          }
+        }
+
+        let shortcutPrefix = "";
+          if (prefixStart > -1 && prefixEnd > -1 && prefixStart < prefixEnd) {
+            shortcutPrefix = currFolder.substring(prefixStart + 1, prefixEnd);
+          }
+
+        fileDatabase[currFolder].choices[fileName] = {
+          path: folderPath + "\\" + fileName,
+          name: path.parse(fileName).name,
+          shortcut: shortcutPrefix ?  shortcutPrefix + (Object.keys(fileDatabase[currFolder].choices).length + 1) : ''
+        };
+    }
+  }
+};
+
+const main = () => {
+  currFolder = '/sounds';
+  const folderPath = path.join(cwd, "/sounds");
+  getFilesInFolder(folderPath, currFolder);
+};
 
 const client = new Client({
   intents: [
@@ -25,20 +67,23 @@ const client = new Client({
 });
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
+let fileDatabase = {};
 let connection;
 let player;
 let shortcuts = {};
 
+main();
+
 const commands = [
   {
-    name: "help",
+    name: "list",
     description: 'Displays available sounds',
     options: [{
       name: 'source',
       description: 'Source of sounds',
       type: 3,
       required: true,
-      choices: createOptions()
+      choices: createOptions(fileDatabase)
     }],
   },
   {
@@ -50,6 +95,16 @@ const commands = [
       required: true,
       type: ApplicationCommandOptionType.String
 
+    }]
+  },
+  {
+    name: 'search',
+    description: "Search for the sound by phrase",
+    options: [{
+      name: 'phrase',
+      description: 'Part of the file',
+      required: true,
+      type: ApplicationCommandOptionType.String
     }]
   },
   {
@@ -75,7 +130,7 @@ client.on("ready", async () => {
       }
     );
     
-    FileNameMap.flatMap(x => Object.values(x.choices)).map(x => {
+    Object.keys(fileDatabase).flatMap(x => Object.values(fileDatabase[x].choices)).map(x => {
       shortcuts[x.shortcut] = x.path;
     })
       
@@ -87,20 +142,23 @@ client.on("ready", async () => {
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isButton()) {
     if (!player) joinChannel(interaction)
-    resource =  createAudioResource("./sounds" + interaction.customId);
+    resource =  createAudioResource(interaction.customId);
+    const fileName = interaction.customId.substring(interaction.customId.lastIndexOf("\\") + 1);
+
     player.play(resource);
-    await interaction.reply({ content: `Playing ${interaction.customId}`, ephemeral: true });
+    await interaction.reply({ content: `Playing ${fileName}`, ephemeral: true });
   }
   if (!interaction.isChatInputCommand()) return;
-
+  
   const { commandName, options } = interaction;
 
-  if (commandName === "help") {
-    const sourceId = options.data[0]?.value;
+  if (commandName === "list") {
+    const key = options.data[0]?.value;
+    const keyWithoutShortcut = key.indexOf('(') > -1 ? key.substring(0, key.indexOf('(')) : key;
     await interaction.reply({
       ephemeral: true,
-      content: `Sounds from **${FileNameMap[+sourceId].name}**:`,
-      components: createButtons(sourceId)
+      content: `Sounds from **${keyWithoutShortcut}**:`,
+      components: createButtons(fileDatabase, key)
   })
   }
   if (commandName === "disconnect") {
@@ -115,14 +173,27 @@ client.on("interactionCreate", async (interaction) => {
   if (commandName === "play") {
     if (!player) joinChannel(interaction)
     const option = options.get('shortcut');
-    if (shortcuts[option?.value]) {
-      await interaction.reply({ content: `Running \`/play ${option?.value}\` -> Playing /sounds${shortcuts[option.value]}`, ephemeral: true });
-      const resource = createAudioResource("./sounds" + shortcuts[option.value]);
+    const shortcut = shortcuts[option?.value];
+    
+    if (shortcut) {
+      const fileName = shortcut.substring(shortcut.lastIndexOf("\\") + 1);
+      await interaction.reply({ content: `Running \`/play ${option?.value}\` -> Playing ${fileName}`, ephemeral: true });
+      const resource = createAudioResource(shortcut);
       player.play(resource);
     }
     else {
-      await interaction.reply({ content: `Key Sound \`${option.value}\` not found - use \`/help\` command to view available sound files`, ephemeral: true });
+      await interaction.reply({ content: `Key Sound \`${option.value}\` not found - use \`/list\` command to view available sound files`, ephemeral: true });
     }
+  }
+  if (commandName === "search") {
+    const phrase = options.data[0]?.value;
+    
+
+    await interaction.reply({
+      ephemeral: true,
+      content: `Search results of phrase **${phrase}**:`,
+      components: searchButtons(fileDatabase, phrase)
+  })
   }
 });
 
