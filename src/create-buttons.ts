@@ -1,4 +1,4 @@
-createButtons = (fileNameMap, key) => {
+export function createButtons(fileNameMap: any, key: string) {
   const list = [];
   let currentLine = [];
 
@@ -32,5 +32,3 @@ createButtons = (fileNameMap, key) => {
   
 return output;
 }
-
-module.exports = createButtons;

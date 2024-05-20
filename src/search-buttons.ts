@@ -1,8 +1,9 @@
-searchButtons = (fileDatabase, phrase) => {
+export function searchButtons(fileDatabase: any, phrase: string) {
   const list = [];
   let currentLine = [];
   let numberOfOutputs = 0;
   phrase = phrase.toLowerCase();
+  
   const length = Object.keys(fileDatabase).length;
   for (let i = 0; i < length; i ++ ) {
     const folder = Object.keys(fileDatabase)[i];
@@ -44,5 +45,3 @@ searchButtons = (fileDatabase, phrase) => {
   
 return output;
 }
-
-module.exports = searchButtons;
