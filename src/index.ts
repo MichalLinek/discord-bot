@@ -160,15 +160,9 @@ client.on("interactionCreate", async (interaction: Interaction) => {
   if (interaction.isButton()) {
     if (!player) joinChannel(interaction);
     let resource = createAudioResource(interaction.customId);
-    const fileName = interaction.customId.substring(
-      interaction.customId.lastIndexOf("\\") + 1
-    );
-
     player.play(resource);
-    await interaction.reply({
-      content: `Playing ${fileName}`,
-      ephemeral: true,
-    });
+    await interaction.deferUpdate();
+    return;
   }
   if (!interaction.isChatInputCommand()) return;
 
