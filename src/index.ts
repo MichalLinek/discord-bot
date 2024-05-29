@@ -11,7 +11,7 @@ const {
 } = require("@discordjs/voice");
 require("dotenv/config");
 const { REST } = require("@discordjs/rest");
-import { Interaction } from "discord.js";
+import { Events, Interaction, InteractionType } from "discord.js";
 import { createButtons } from "./create-buttons";
 import { createOptions } from "./create-options";
 import { File } from "./interfaces/file.interface";
@@ -82,7 +82,7 @@ let shortcuts: { [key: string]: any } = {};
 
 main();
 
-const commands = [
+const commands: any[] = [
   {
     name: "help",
     description: "Learn how to use DiscordBot to play sounds",
@@ -125,6 +125,19 @@ const commands = [
     ],
   },
   {
+    name: "autocomplete",
+    description: "Look up the sound",
+    options: [
+      {
+        name: "phrase",
+        description: "Fill some text",
+        required: true,
+        autocomplete: true,
+        type: ApplicationCommandOptionType.String,
+      },
+    ],
+  },
+  {
     name: "invite",
     description: "Invite SoundBot to the Voice Channel",
   },
@@ -134,7 +147,7 @@ const commands = [
   },
 ];
 
-client.on("ready", async () => {
+client.on(Events.ClientReady, async () => {
   try {
     await rest.put(
       Routes.applicationGuildCommands(
@@ -156,7 +169,52 @@ client.on("ready", async () => {
   }
 });
 
-client.on("interactionCreate", async (interaction: Interaction) => {
+client.on(Events.InteractionCreate, async (interaction: Interaction) => {
+  if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+    const targetId = interaction.options.getString("phrase");
+    const myList = [
+      {
+        name: "Test1",
+        value: "t1",
+      },
+      {
+        name: "BTest3",
+        value: "t3",
+      },
+      {
+        name: "RATest4",
+        value: "t4",
+      },
+      {
+        name: "Test5",
+        value: "t5",
+      },
+      {
+        name: "RATest6",
+        value: "t6",
+      },
+      {
+        name: "BTest7",
+        value: "t7",
+      },
+      {
+        name: "RATest8",
+        value: "t8",
+      },
+    ];
+
+    if (!targetId) {
+      interaction.respond(myList.slice(0, 25));
+      return;
+    }
+    const targets = myList.filter((x) =>
+      x.name.toLowerCase().includes(targetId.toLowerCase())
+    );
+    interaction.respond(targets);
+
+    return;
+  }
+  console.log("accepted");
   if (interaction.isButton()) {
     if (!player) joinChannel(interaction);
     let resource = createAudioResource(interaction.customId);
