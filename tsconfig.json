@@ -25,7 +25,7 @@
     ],
     "include": [
         "./**/*.ts"
-    ],
+, "src/commands/search.command.x1", "src/commands/ping.command.ts" , "src/commands/ping.command.ts", "src/commands/help.command.ts"   ],
     "exclude": [
         "node_modules",
         "dist"

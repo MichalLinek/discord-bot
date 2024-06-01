@@ -1,5 +1,4 @@
 export interface File {
-    path: string;
-    name: string;
-    shortcut: string;
+  path: string;
+  name: string;
 }
