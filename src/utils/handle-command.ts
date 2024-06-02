@@ -1,5 +1,6 @@
 import { CommandInteraction } from "discord.js";
 import { SoundBotClient } from "./sound-bot.client";
+
 export default async function handleCommand(
   client: SoundBotClient,
   interaction: CommandInteraction

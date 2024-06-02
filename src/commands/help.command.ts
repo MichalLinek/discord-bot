@@ -12,8 +12,8 @@ export default {
 There are 3 commands to use:\n
 - \`/list <folder>\` to view the files to play inside the given <folder>
 > Example: \`/list folder:Age Of Empires\`\n
-- \`/search <phrase>\` to search files by the given <phrase> 
-> Example: \`/search phrase:Kim\`\n
+- \`/search <query>\` to search files by the given <query> 
+> Example: \`/search query:Kim\`\n
 `,
     });
   },

@@ -10,10 +10,14 @@ import { Command } from "discord.js-commando";
 import path from "node:path";
 import requireAll from "require-all";
 import { handleEvent } from "./handle-event";
+import { SoundPlayer } from "./audio-player";
+import { dataInitialize } from "./soundDb";
 
 export class SoundBotClient extends Client {
   commands: Collection<string, Command> = new Collection();
   rest: REST;
+  player = new SoundPlayer();
+  values: { [key: string]: any } = {};
 
   constructor() {
     super({
@@ -39,7 +43,6 @@ export class SoundBotClient extends Client {
       dirname: path.join(__dirname, "../commands"),
       resolve: (x) => {
         const command = x.default as any;
-        console.log(command);
         console.log(`Command '${command.data.name}' registered.`);
         this.commands.set(command.data.name, command);
       },
@@ -48,7 +51,7 @@ export class SoundBotClient extends Client {
     requireAll({
       ...sharedSettings,
       dirname: path.join(__dirname, "../events"),
-      resolve: async (x) => {
+      resolve: (x) => {
         const event = x.default as any;
         console.log(`Event '${event.name}' registered.`);
         handleEvent(this, event);
@@ -57,8 +60,21 @@ export class SoundBotClient extends Client {
   }
 
   async run() {
+    dataInitialize();
     await this.resolveModules();
     await this.login(process.env.TOKEN);
+  }
+
+  joinChannel(interaction: any) {
+    this.player.joinChannel(interaction);
+  }
+
+  disconnectFromChannel() {
+    this.player.disconnectFromChannel();
+  }
+
+  playSound(interaction: any, path: string) {
+    this.player.play(interaction, path);
   }
 
   async deployCommands() {
