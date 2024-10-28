@@ -5,11 +5,14 @@ import {
   createAudioResource,
   joinVoiceChannel,
 } from "@discordjs/voice";
+import { MongoService } from "./stats.service";
+import { SoundBotClient } from "./sound-bot.client";
 
 export class SoundPlayer {
   private player?: AudioPlayer | null;
   private connection?: VoiceConnection | null;
 
+  constructor(private botClient: SoundBotClient) {}
   public joinChannel(interaction: any) {
     if (this.player) return;
     this.connection = joinVoiceChannel({
@@ -32,6 +35,12 @@ export class SoundPlayer {
     if (!this.player) {
       this.joinChannel(interaction);
     }
+
     this.player!.play(createAudioResource(soundPath));
+
+    if (this.botClient.saveStatistics) {
+      const service = new MongoService();
+      service.getMyPopularFiles();
+    }
   }
 }

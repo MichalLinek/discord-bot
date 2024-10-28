@@ -16,8 +16,9 @@ import { dataInitialize } from "./soundDb";
 export class SoundBotClient extends Client {
   commands: Collection<string, Command> = new Collection();
   rest: REST;
-  player = new SoundPlayer();
+  player = new SoundPlayer(this);
   values: { [key: string]: any } = {};
+  saveStatistics: boolean = false;
 
   constructor() {
     super({
