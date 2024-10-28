@@ -18,7 +18,7 @@ export class SoundBotClient extends Client {
   rest: REST;
   player = new SoundPlayer(this);
   values: { [key: string]: any } = {};
-  saveStatistics: boolean = false;
+  saveStatistics: boolean = true;
 
   constructor() {
     super({

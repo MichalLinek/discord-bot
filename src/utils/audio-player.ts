@@ -5,8 +5,8 @@ import {
   createAudioResource,
   joinVoiceChannel,
 } from "@discordjs/voice";
-import { MongoService } from "./stats.service";
 import { SoundBotClient } from "./sound-bot.client";
+import { StatsService } from "./stats.service";
 
 export class SoundPlayer {
   private player?: AudioPlayer | null;
@@ -39,8 +39,8 @@ export class SoundPlayer {
     this.player!.play(createAudioResource(soundPath));
 
     if (this.botClient.saveStatistics) {
-      const service = new MongoService();
-      service.getMyPopularFiles();
+      const service = new StatsService();
+      service.storePlayStatistic(interaction.user.id, interaction.customId);
     }
   }
 }
