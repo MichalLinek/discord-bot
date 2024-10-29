@@ -38,7 +38,7 @@ export class SoundPlayer {
 
     this.player!.play(createAudioResource(soundPath));
 
-    if (this.botClient.saveStatistics) {
+    if (this.botClient.useStatistics) {
       const service = new StatsService();
       service.storePlayStatistic(interaction.user.id, interaction.customId);
     }

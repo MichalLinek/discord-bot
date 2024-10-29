@@ -9,11 +9,11 @@ export default {
       ephemeral: true,
       content: `
 # How to use:
-There are 3 commands to use:\n
+There are following commands to use:\n
 - \`/list <folder>\` to view the files to play inside the given <folder>
 > Example: \`/list folder:Age Of Empires\`\n
-- \`/search <query>\` to search files by the given <query> 
-> Example: \`/search query:Kim\`\n
+- \`/find <query>\` to search files by the given <query> 
+> Example: \`/find query:Kim\`\n
 `,
     });
   },

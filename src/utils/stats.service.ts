@@ -38,9 +38,31 @@ export class StatsService {
     const existingFileRecord = await files
       .find({ userId: userId })
       .sort({ playCount: -1 })
-      .limit(25)
-      .exec();
+      .limit(25);
     await connection.disconnect();
     return existingFileRecord;
+  }
+
+  async getMostPopularFiles(): Promise<{ fileName: string; count: number }[]> {
+    const connection = await mongoose.connect(this.mongoUrl);
+
+    const values = await files
+      .aggregate([
+        {
+          $group: {
+            _id: "$fileName",
+            count: { $sum: "$playCount" },
+          },
+        },
+      ])
+      .limit(25)
+      .sort({ count: -1 });
+
+    await connection.disconnect();
+
+    return values.map((value) => ({
+      fileName: value._id,
+      count: value.count,
+    }));
   }
 }
