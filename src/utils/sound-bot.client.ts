@@ -11,7 +11,7 @@ import path from "node:path";
 import requireAll from "require-all";
 import { handleEvent } from "./handle-event";
 import { SoundPlayer } from "./audio-player";
-import { dataInitialize } from "./soundDb";
+import { dataInitialize, data } from "./soundDb";
 
 export class SoundBotClient extends Client {
   commands: Collection<string, Command> = new Collection();
@@ -76,6 +76,16 @@ export class SoundBotClient extends Client {
 
   playSound(interaction: any, path: string) {
     this.player.play(interaction, path);
+  }
+
+  playOnline(path: string) {
+    console.log(path);
+
+    this.player.playSingle(path);
+  }
+
+  getFiles() {
+    return data;
   }
 
   async deployCommands() {

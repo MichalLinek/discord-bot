@@ -43,4 +43,8 @@ export class SoundPlayer {
       service.storePlayStatistic(interaction.user.id, interaction.customId);
     }
   }
+
+  public playSingle(soundPath: string) {
+    this.player!.play(createAudioResource(soundPath));
+  }
 }
